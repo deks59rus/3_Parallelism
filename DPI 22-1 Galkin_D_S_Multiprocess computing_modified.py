@@ -2,18 +2,38 @@ import numpy as np
 import concurrent.futures
 import threading
 import logging
+import os
+from datetime import datetime
+
+
+# Функция для создания уникального имени лог-файла
+def get_log_file_name():
+    log_files = [f for f in os.listdir('.') if f.startswith('matrix_multiplication_') and f.endswith('.log')]
+    log_files.sort()  # Сортируем файлы по имени (по времени создания)
+
+    # Если больше 5 лог-файлов, удаляем самый старый
+    if len(log_files) >= 5:
+        os.remove(log_files[0])
+
+    # Создаем новый лог-файл с текущей датой и временем
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"matrix_multiplication_{timestamp}.log"
+
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filename='matrix_multiplication.log', filemode='w')
+log_file_name = get_log_file_name()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filename=log_file_name,
+                    filemode='w')
+
 
 class MatrixMultiplier:
-    def __init__(self, size, num_matrices, output_file, num_threads):
+    def __init__(self, size, num_matrices, output_file):
         self.size = size
         self.num_matrices = num_matrices
         self.results = []
         self.lock = threading.Lock()
         self.output_file = output_file
-        self.num_threads = num_threads
+        self.num_threads = os.cpu_count()  # Автоматически определяем количество потоков
 
     def generate_matrix(self):
         return np.random.randint(1, 10, size=(self.size, self.size))
@@ -23,12 +43,12 @@ class MatrixMultiplier:
         with self.lock:
             self.results.append((index, value))
             # Логируем промежуточный результат
-            logging.info(f"Поток {threading.current_thread().name} перемножает матрицы {index}:\n{value}\n")
+            logging.info(f"Поток {threading.current_thread().name} перемножает матрицы {index}:\n{value.tolist()}\n")
 
     def write_results_to_file(self):
         with open(self.output_file, 'w') as f:
             for index, result in self.results:
-                f.write(f"Матрица {index}:\n{result}\n\n")
+                f.write(f"Матрица {index}:\n{result.tolist()}\n\n")
 
     def run(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
@@ -41,14 +61,15 @@ class MatrixMultiplier:
             # Ждем завершения всех задач
             concurrent.futures.wait(futures)
 
-if __name__ == "__main__":
-    size = 3
-    num_matrices = 1000
-    output_file = "results.txt"
-    num_threads = 4
 
-    multiplier = MatrixMultiplier(size, num_matrices, output_file, num_threads)
+if __name__ == "__main__":
+    size = 50  # Размерность матриц
+    num_matrices = 10  # Количество матриц (уменьшено для примера, можно увеличить)
+    output_file = "large_matrix_results.txt"  # Файл для сохранения результатов
+
+    multiplier = MatrixMultiplier(size, num_matrices, output_file)
     multiplier.run()
 
+    # Запись результатов в файл
     multiplier.write_results_to_file()
     logging.info(f"Результаты перемножения сохранены в файл: {output_file}")
