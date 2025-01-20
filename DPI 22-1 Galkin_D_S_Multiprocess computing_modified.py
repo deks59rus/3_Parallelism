@@ -45,10 +45,14 @@ class MatrixMultiplier:
             # Логируем промежуточный результат
             logging.info(f"Поток {threading.current_thread().name} перемножает матрицы {index}:\n{value.tolist()}\n")
 
+    def format_matrix(self, matrix):
+        """Форматирует матрицу в виде строки для красивого отображения."""
+        return '\n'.join([' '.join([f"{num:2}" for num in row]) for row in matrix])
+
     def write_results_to_file(self):
         with open(self.output_file, 'w') as f:
             for index, result in self.results:
-                f.write(f"Матрица {index}:\n{result.tolist()}\n\n")
+                f.write(f"Матрица {index}:\n{self.format_matrix(result)}\n\n")
 
     def run(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
@@ -63,8 +67,8 @@ class MatrixMultiplier:
 
 
 if __name__ == "__main__":
-    size = 50  # Размерность матриц
-    num_matrices = 10  # Количество матриц (уменьшено для примера, можно увеличить)
+    size = 6  # Размерность матриц
+    num_matrices = 100  # Количество матриц (уменьшено для примера, можно увеличить)
     output_file = "large_matrix_results.txt"  # Файл для сохранения результатов
 
     multiplier = MatrixMultiplier(size, num_matrices, output_file)
