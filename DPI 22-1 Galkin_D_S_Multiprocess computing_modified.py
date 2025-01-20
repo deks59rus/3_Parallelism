@@ -1,6 +1,10 @@
 import numpy as np
 import concurrent.futures
 import threading
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filename='matrix_multiplication.log', filemode='w')
 
 class MatrixMultiplier:
     def __init__(self, size, num_matrices, output_file, num_threads):
@@ -18,8 +22,8 @@ class MatrixMultiplier:
         value = A @ B  # Используем матричное умножение
         with self.lock:
             self.results.append((index, value))
-            # Печатаем промежуточный результат в консоль
-            print(f"Поток {threading.current_thread().name} перемножает матрицы {index}:\n{value}\n")
+            # Логируем промежуточный результат
+            logging.info(f"Поток {threading.current_thread().name} перемножает матрицы {index}:\n{value}\n")
 
     def write_results_to_file(self):
         with open(self.output_file, 'w') as f:
@@ -38,14 +42,13 @@ class MatrixMultiplier:
             concurrent.futures.wait(futures)
 
 if __name__ == "__main__":
-    size = 3  # Размерность матриц
-    num_matrices = 1000  # Количество матриц
-    output_file = "results.txt"  # Файл для сохранения результатов
-    num_threads = 4  # Количество потоков
+    size = 3
+    num_matrices = 1000
+    output_file = "results.txt"
+    num_threads = 4
 
     multiplier = MatrixMultiplier(size, num_matrices, output_file, num_threads)
     multiplier.run()
 
-    # Запись результатов в файл
     multiplier.write_results_to_file()
-    print(f"Результаты перемножения сохранены в файл: {output_file}")
+    logging.info(f"Результаты перемножения сохранены в файл: {output_file}")
